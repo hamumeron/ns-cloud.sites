@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeDrop — コードを公開しよう</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-mark">&lt;/&gt;</span>
+          <span class="logo-text">CodeDrop</span>
+        </div>
+        <nav class="nav">
+          <button class="nav-btn" id="nav-editor" data-view="editor">エディタ</button>
+          <button class="nav-btn" id="nav-sites" data-view="sites">公開済み</button>
+        </nav>
+        <div class="header-actions">
+          <button class="btn-primary" id="publish-btn">公開する</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Editor View -->
+    <main id="view-editor" class="view active">
+      <div class="workspace">
+        <!-- Sidebar: file tree -->
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">ファイル</span>
+            <button class="icon-btn" id="add-file-btn" title="ファイルを追加">+</button>
+          </div>
+          <ul class="file-list" id="file-list"></ul>
+          <div class="sidebar-meta">
+            <label class="meta-label">サイト名</label>
+            <input type="text" class="meta-input" id="site-name" placeholder="my-awesome-site" />
+            <label class="meta-label">説明（任意）</label>
+            <input type="text" class="meta-input" id="site-desc" placeholder="サイトの説明" />
+          </div>
+        </aside>
+
+        <!-- Editor pane -->
+        <div class="editor-pane">
+          <div class="editor-tabs" id="editor-tabs"></div>
+          <div class="editor-wrapper">
+            <div class="line-numbers" id="line-numbers"></div>
+            <textarea class="code-editor" id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+          </div>
+        </div>
+
+        <!-- Preview pane -->
+        <div class="preview-pane">
+          <div class="preview-toolbar">
+            <span class="preview-label">プレビュー</span>
+            <div class="preview-url-bar" id="preview-url-bar">
+              <span class="url-scheme">localhost/</span>
+              <span class="url-path" id="preview-url-path">index.html</span>
+            </div>
+            <button class="icon-btn" id="refresh-preview" title="更新">↺</button>
+          </div>
+          <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-empty" id="preview-empty">
+            <div class="empty-icon">◻</div>
+            <p>HTMLファイルを追加してプレビュー</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Sites View -->
+    <main id="view-sites" class="view">
+      <div class="sites-container">
+        <div class="sites-header">
+          <h1 class="sites-title">公開済みサイト</h1>
+          <button class="btn-primary" id="new-project-btn">新しいプロジェクト</button>
+        </div>
+        <div class="sites-grid" id="sites-grid">
+          <!-- populated by JS -->
+        </div>
+        <div class="sites-empty" id="sites-empty">
+          <div class="empty-icon">☁</div>
+          <p>まだサイトが公開されていません</p>
+          <button class="btn-secondary" id="goto-editor-btn">エディタへ</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Publish Modal -->
+    <div class="modal-overlay" id="publish-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">サイトを公開</h2>
+          <button class="modal-close" id="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="publish-summary" id="publish-summary"></div>
+          <div class="publish-url-preview">
+            <span class="url-scheme">codedrop.local/</span>
+            <span id="modal-url-slug" class="url-slug">—</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="modal-cancel">キャンセル</button>
+          <button class="btn-primary" id="modal-confirm">公開する 🚀</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Published Site Viewer -->
+    <div class="site-viewer" id="site-viewer">
+      <div class="viewer-bar">
+        <div class="viewer-url">
+          <span class="url-scheme">codedrop.local/</span>
+          <span id="viewer-slug" class="url-slug"></span>
+        </div>
+        <div class="viewer-actions">
+          <button class="viewer-btn" id="viewer-edit">編集</button>
+          <button class="viewer-btn viewer-btn-danger" id="viewer-delete">削除</button>
+          <button class="viewer-btn" id="viewer-close">✕ 閉じる</button>
+        </div>
+      </div>
+      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
