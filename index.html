@@ -1,137 +1,868 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CodeDrop — コードを公開しよう</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CodeDrop</title>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #0e0e10;
+  --bg2:      #16161a;
+  --bg3:      #1e1e24;
+  --bg4:      #26262e;
+  --border:   #2a2a35;
+  --border2:  #3a3a4a;
+  --text:     #e8e8f0;
+  --text2:    #9090a8;
+  --text3:    #52526a;
+  --accent:   #6bffc8;
+  --accent2:  #3ddba4;
+  --abg:      rgba(107,255,200,0.09);
+  --danger:   #ff6b6b;
+  --radius:   6px;
+  --radius-lg:12px;
+  --mono:     'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --ui:       system-ui, -apple-system, sans-serif;
+  --hh:       50px;
+  --sw:       200px;
+  --pw:       38%;
+}
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--ui); font-size: 14px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ── Header ─────────────────────────────────────────────────── */
+#header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--hh); background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 12px;
+}
+.logo { display: flex; align-items: center; gap: 7px; margin-right: 16px; text-decoration: none; }
+.logo-mark { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 700; }
+.logo-text { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; color: var(--text); }
+.nav { display: flex; gap: 2px; flex: 1; }
+.nav-btn {
+  background: none; border: none; color: var(--text2); font-size: 13px; font-weight: 600;
+  padding: 5px 14px; border-radius: var(--radius); transition: all 0.12s; letter-spacing: 0.2px;
+}
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--bg4); color: var(--accent); }
+.hdr-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  border: none; font-family: inherit; font-size: 13px; font-weight: 700;
+  padding: 6px 16px; border-radius: var(--radius); transition: all 0.13s; line-height: 1;
+}
+.btn-accent { background: var(--accent); color: #071510; }
+.btn-accent:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(107,255,200,.18); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); font-weight: 600; }
+.btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(255,107,107,.3); font-weight: 600; }
+.btn-danger:hover { background: rgba(255,107,107,.1); }
+.icon-btn {
+  background: none; border: 1px solid var(--border); color: var(--text2);
+  width: 28px; height: 28px; border-radius: var(--radius); font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center; transition: all 0.12s;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Views ───────────────────────────────────────────────────── */
+.view { display: none; position: fixed; top: var(--hh); left: 0; right: 0; bottom: 0; }
+.view.active { display: flex; }
+
+/* ── Editor view ─────────────────────────────────────────────── */
+#view-editor { flex-direction: row; }
+
+/* Sidebar */
+#sidebar {
+  width: var(--sw); min-width: var(--sw); background: var(--bg2);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 8px; border-bottom: 1px solid var(--border);
+}
+.sb-head-title { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); }
+#file-list { list-style: none; flex: 1; overflow-y: auto; padding: 4px 0; }
+.fi {
+  display: flex; align-items: center; gap: 5px; padding: 6px 12px;
+  color: var(--text2); font-family: var(--mono); font-size: 11.5px;
+  border-left: 2px solid transparent; cursor: pointer; transition: all 0.1s; user-select: none;
+}
+.fi:hover { background: var(--bg3); color: var(--text); }
+.fi.active { background: var(--bg3); color: var(--accent); border-left-color: var(--accent); }
+.fi-icon { opacity: 0.45; font-size: 10px; min-width: 12px; text-align: center; }
+.fi-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fi-del { opacity: 0; background: none; border: none; color: var(--danger); font-size: 11px; padding: 1px 4px; line-height: 1; }
+.fi:hover .fi-del { opacity: 1; }
+.sb-meta { padding: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; }
+.sb-meta label { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); }
+.sb-meta input {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--mono); font-size: 11.5px; padding: 5px 9px; border-radius: var(--radius);
+  outline: none; transition: border-color 0.12s; width: 100%;
+}
+.sb-meta input:focus { border-color: var(--accent); }
+.sb-meta input::placeholder { color: var(--text3); }
+
+/* Editor pane */
+#editor-pane {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+  background: var(--bg); border-right: 1px solid var(--border);
+}
+#ed-tabs {
+  display: flex; background: var(--bg2); border-bottom: 1px solid var(--border);
+  overflow-x: auto; min-height: 34px; align-items: stretch;
+}
+.ed-tab {
+  display: inline-flex; align-items: center; gap: 5px; padding: 0 14px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--text2); white-space: nowrap;
+  border: none; border-right: 1px solid var(--border); border-bottom: 2px solid transparent;
+  background: none; cursor: pointer; transition: all 0.1s;
+}
+.ed-tab:hover { color: var(--text); background: var(--bg3); }
+.ed-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg); }
+.tab-x { opacity: 0; font-size: 9px; color: var(--text3); background: none; border: none; padding: 1px 3px; line-height: 1; }
+.ed-tab:hover .tab-x, .ed-tab.active .tab-x { opacity: 1; }
+#ed-wrap { flex: 1; display: flex; overflow: hidden; }
+#ln {
+  padding: 14px 8px 14px 6px; min-width: 42px; text-align: right;
+  font-family: var(--mono); font-size: 12.5px; line-height: 21px; color: var(--text3);
+  background: var(--bg); border-right: 1px solid var(--border); overflow: hidden; user-select: none;
+}
+#ed {
+  flex: 1; background: var(--bg); color: var(--text); font-family: var(--mono);
+  font-size: 12.5px; line-height: 21px; padding: 14px 14px 14px 12px;
+  border: none; outline: none; resize: none; overflow-y: auto; tab-size: 2; white-space: pre; word-break: normal;
+}
+
+/* Preview pane */
+#preview-pane {
+  width: var(--pw); min-width: 240px; display: flex; flex-direction: column; background: var(--bg2);
+}
+#prev-toolbar {
+  display: flex; align-items: center; gap: 7px; padding: 7px 10px;
+  border-bottom: 1px solid var(--border); background: var(--bg2); min-height: 38px;
+}
+.prev-label { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); white-space: nowrap; }
+#prev-urlbar {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 3px 9px; font-family: var(--mono); font-size: 10.5px; color: var(--text2);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.u-scheme { color: var(--text3); }
+.u-path { color: var(--accent); }
+#prev-frame { flex: 1; border: none; background: #fff; display: none; }
+#prev-frame.vis { display: block; }
+#prev-empty {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; color: var(--text3); font-size: 13px;
+}
+#prev-empty.hidden { display: none; }
+#prev-empty .ei { font-size: 36px; opacity: 0.25; }
+
+/* ── Sites view ─────────────────────────────────────────────── */
+#view-sites { overflow-y: auto; background: var(--bg); display: none; }
+#view-sites.active { display: block; }
+.sites-wrap { max-width: 940px; margin: 0 auto; padding: 44px 20px; }
+.sites-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+.sites-title { font-size: 26px; font-weight: 800; letter-spacing: -0.8px; }
+#sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+.site-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; cursor: pointer; transition: all 0.18s;
+}
+.site-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(107,255,200,.07); }
+.site-thumb { height: 150px; background: var(--bg3); overflow: hidden; position: relative; }
+.site-thumb iframe { width: 200%; height: 200%; transform: scale(0.5); transform-origin: top left; pointer-events: none; border: none; }
+.site-thumb-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; color: var(--text3); }
+.site-info { padding: 12px 14px; border-top: 1px solid var(--border); }
+.site-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-row { display: flex; align-items: center; justify-content: space-between; }
+.site-slug { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.site-date { font-size: 11px; color: var(--text3); }
+.site-desc { font-size: 12px; color: var(--text2); margin-top: 5px; }
+.site-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 7px; }
+.tag { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; background: var(--bg4); color: var(--text2); border: 1px solid var(--border); }
+#sites-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 70px 0; color: var(--text3); }
+#sites-empty.hidden { display: none; }
+#sites-empty .ei { font-size: 38px; opacity: 0.22; }
+
+/* ── Modal ───────────────────────────────────────────────────── */
+.overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.72);
+  z-index: 200; align-items: center; justify-content: center;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-lg);
+  width: 460px; max-width: 96vw; overflow: hidden; animation: su 0.18s ease;
+}
+@keyframes su { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-hdr { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+.modal-title { font-size: 16px; font-weight: 700; }
+.modal-x { background: none; border: none; color: var(--text2); font-size: 13px; padding: 3px 6px; border-radius: 4px; transition: color 0.12s; }
+.modal-x:hover { color: var(--danger); }
+.modal-body { padding: 18px; }
+.modal-ftr { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 18px; border-top: 1px solid var(--border); }
+.pub-summary {
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 13px; margin-bottom: 14px; line-height: 1.9;
+}
+.pub-url {
+  background: var(--abg); border: 1px solid rgba(107,255,200,.2);
+  border-radius: var(--radius); padding: 9px 13px; font-family: var(--mono); font-size: 13px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.pub-url-text { word-break: break-all; }
+
+/* Share URL modal extras */
+#share-url-box {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 12px; font-family: var(--mono); font-size: 11px; color: var(--text2);
+  word-break: break-all; line-height: 1.6; margin-bottom: 10px; max-height: 80px; overflow-y: auto;
+}
+.copy-row { display: flex; gap: 8px; }
+#copy-share-btn { flex: 1; }
+
+/* ── Toast ───────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(56px);
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 9px 18px; font-size: 13px; font-weight: 600; z-index: 500;
+  transition: transform 0.22s ease; white-space: nowrap; pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.success { border-color: rgba(107,255,200,.4); color: var(--accent); }
+#toast.error   { border-color: rgba(255,107,107,.4); color: var(--danger); }
+#toast.info    { border-color: var(--border2); color: var(--text); }
+
+/* ── Viewer ──────────────────────────────────────────────────── */
+#viewer {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  flex-direction: column; background: var(--bg);
+}
+#viewer.open { display: flex; }
+#viewer-bar {
+  display: flex; align-items: center; gap: 10px; padding: 0 14px;
+  height: 46px; background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+#viewer-url {
+  flex: 1; max-width: 480px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 4px 11px; font-family: var(--mono); font-size: 12px; color: var(--text2);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+#viewer-frame { flex: 1; border: none; background: #fff; }
+.vbtn {
+  background: transparent; border: 1px solid var(--border2); color: var(--text2);
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius);
+  transition: all 0.12s;
+}
+.vbtn:hover { color: var(--text); border-color: var(--text3); }
+.vbtn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 860px) { :root { --pw: 34%; } }
+@media (max-width: 680px) { #preview-pane { display: none; } :root { --sw: 160px; } }
+@media (max-width: 480px) { #sidebar { display: none; } }
+</style>
 </head>
 <body>
-  <div id="app">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-inner">
-        <div class="logo">
-          <span class="logo-mark">&lt;/&gt;</span>
-          <span class="logo-text">CodeDrop</span>
-        </div>
-        <nav class="nav">
-          <button class="nav-btn" id="nav-editor" data-view="editor">エディタ</button>
-          <button class="nav-btn" id="nav-sites" data-view="sites">公開済み</button>
-        </nav>
-        <div class="header-actions">
-          <button class="btn-primary" id="publish-btn">公開する</button>
-        </div>
-      </div>
-    </header>
 
-    <!-- Editor View -->
-    <main id="view-editor" class="view active">
-      <div class="workspace">
-        <!-- Sidebar: file tree -->
-        <aside class="sidebar">
-          <div class="sidebar-header">
-            <span class="sidebar-title">ファイル</span>
-            <button class="icon-btn" id="add-file-btn" title="ファイルを追加">+</button>
-          </div>
-          <ul class="file-list" id="file-list"></ul>
-          <div class="sidebar-meta">
-            <label class="meta-label">サイト名</label>
-            <input type="text" class="meta-input" id="site-name" placeholder="my-awesome-site" />
-            <label class="meta-label">説明（任意）</label>
-            <input type="text" class="meta-input" id="site-desc" placeholder="サイトの説明" />
-          </div>
-        </aside>
+<!-- ── Header ─────────────────────────────────────── -->
+<div id="header">
+  <a class="logo" href="#">
+    <span class="logo-mark">&lt;/&gt;</span>
+    <span class="logo-text">CodeDrop</span>
+  </a>
+  <nav class="nav">
+    <button class="nav-btn active" data-view="editor">エディタ</button>
+    <button class="nav-btn" data-view="sites">公開済み</button>
+  </nav>
+  <div class="hdr-actions">
+    <button class="btn btn-ghost" id="share-url-btn" title="URLで共有">🔗 共有</button>
+    <button class="btn btn-accent" id="publish-btn">公開する</button>
+  </div>
+</div>
 
-        <!-- Editor pane -->
-        <div class="editor-pane">
-          <div class="editor-tabs" id="editor-tabs"></div>
-          <div class="editor-wrapper">
-            <div class="line-numbers" id="line-numbers"></div>
-            <textarea class="code-editor" id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
-          </div>
-        </div>
+<!-- ── Editor View ────────────────────────────────── -->
+<main id="view-editor" class="view active">
 
-        <!-- Preview pane -->
-        <div class="preview-pane">
-          <div class="preview-toolbar">
-            <span class="preview-label">プレビュー</span>
-            <div class="preview-url-bar" id="preview-url-bar">
-              <span class="url-scheme">localhost/</span>
-              <span class="url-path" id="preview-url-path">index.html</span>
-            </div>
-            <button class="icon-btn" id="refresh-preview" title="更新">↺</button>
-          </div>
-          <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-empty" id="preview-empty">
-            <div class="empty-icon">◻</div>
-            <p>HTMLファイルを追加してプレビュー</p>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- Sites View -->
-    <main id="view-sites" class="view">
-      <div class="sites-container">
-        <div class="sites-header">
-          <h1 class="sites-title">公開済みサイト</h1>
-          <button class="btn-primary" id="new-project-btn">新しいプロジェクト</button>
-        </div>
-        <div class="sites-grid" id="sites-grid">
-          <!-- populated by JS -->
-        </div>
-        <div class="sites-empty" id="sites-empty">
-          <div class="empty-icon">☁</div>
-          <p>まだサイトが公開されていません</p>
-          <button class="btn-secondary" id="goto-editor-btn">エディタへ</button>
-        </div>
-      </div>
-    </main>
-
-    <!-- Publish Modal -->
-    <div class="modal-overlay" id="publish-modal">
-      <div class="modal">
-        <div class="modal-header">
-          <h2 class="modal-title">サイトを公開</h2>
-          <button class="modal-close" id="modal-close">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="publish-summary" id="publish-summary"></div>
-          <div class="publish-url-preview">
-            <span class="url-scheme">codedrop.local/</span>
-            <span id="modal-url-slug" class="url-slug">—</span>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" id="modal-cancel">キャンセル</button>
-          <button class="btn-primary" id="modal-confirm">公開する 🚀</button>
-        </div>
-      </div>
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sb-head">
+      <span class="sb-head-title">ファイル</span>
+      <button class="icon-btn" id="add-file-btn" title="追加">+</button>
     </div>
+    <ul id="file-list"></ul>
+    <div class="sb-meta">
+      <label>サイト名</label>
+      <input type="text" id="site-name" placeholder="my-site" />
+      <label>説明（任意）</label>
+      <input type="text" id="site-desc" placeholder="一言説明" />
+    </div>
+  </aside>
 
-    <!-- Success Toast -->
-    <div class="toast" id="toast"></div>
-
-    <!-- Published Site Viewer -->
-    <div class="site-viewer" id="site-viewer">
-      <div class="viewer-bar">
-        <div class="viewer-url">
-          <span class="url-scheme">codedrop.local/</span>
-          <span id="viewer-slug" class="url-slug"></span>
-        </div>
-        <div class="viewer-actions">
-          <button class="viewer-btn" id="viewer-edit">編集</button>
-          <button class="viewer-btn viewer-btn-danger" id="viewer-delete">削除</button>
-          <button class="viewer-btn" id="viewer-close">✕ 閉じる</button>
-        </div>
-      </div>
-      <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+  <!-- Editor pane -->
+  <div id="editor-pane">
+    <div id="ed-tabs"></div>
+    <div id="ed-wrap">
+      <div id="ln"></div>
+      <textarea id="ed" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Preview pane -->
+  <div id="preview-pane">
+    <div id="prev-toolbar">
+      <span class="prev-label">プレビュー</span>
+      <div id="prev-urlbar"><span class="u-scheme">local/</span><span class="u-path" id="prev-path">index.html</span></div>
+      <button class="icon-btn" id="prev-refresh" title="更新">↺</button>
+    </div>
+    <iframe id="prev-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+    <div id="prev-empty">
+      <div class="ei">◻</div>
+      <span>HTMLファイルを追加してプレビュー</span>
+    </div>
+  </div>
+</main>
+
+<!-- ── Sites View ─────────────────────────────────── -->
+<main id="view-sites" class="view">
+  <div class="sites-wrap">
+    <div class="sites-hdr">
+      <h1 class="sites-title">公開済みサイト</h1>
+      <button class="btn btn-accent" id="new-proj-btn">+ 新しいプロジェクト</button>
+    </div>
+    <div id="sites-grid"></div>
+    <div id="sites-empty">
+      <div class="ei">☁</div>
+      <span>まだサイトが公開されていません</span>
+      <button class="btn btn-ghost" id="goto-editor-btn">エディタへ</button>
+    </div>
+  </div>
+</main>
+
+<!-- ── Publish Modal ──────────────────────────────── -->
+<div class="overlay" id="pub-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title">サイトを公開</span>
+      <button class="modal-x" id="pub-modal-x">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pub-summary" id="pub-summary"></div>
+      <div class="pub-url">
+        <span class="u-scheme">codedrop/</span>
+        <span class="pub-url-text" id="pub-slug">—</span>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" id="pub-cancel">キャンセル</button>
+      <button class="btn btn-accent" id="pub-confirm">公開する 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Share URL Modal ────────────────────────────── -->
+<div class="overlay" id="share-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title">🔗 URLで共有</span>
+      <button class="modal-x" id="share-modal-x">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">
+        このURLを開くと、同じコードがそのまま復元されます。<br>
+        URLにコード全体が埋め込まれるためサーバー不要です。
+      </p>
+      <div id="share-url-box">生成中...</div>
+      <div class="copy-row">
+        <button class="btn btn-accent" id="copy-share-btn">📋 URLをコピー</button>
+        <button class="btn btn-ghost" id="share-modal-close">閉じる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Site Viewer ────────────────────────────────── -->
+<div id="viewer">
+  <div id="viewer-bar">
+    <div id="viewer-url">
+      <span class="u-scheme">codedrop/</span><span id="viewer-slug"></span>
+    </div>
+    <button class="vbtn" id="viewer-share-btn">🔗 共有URL</button>
+    <button class="vbtn" id="viewer-edit-btn">編集</button>
+    <button class="vbtn danger" id="viewer-del-btn">削除</button>
+    <button class="vbtn" id="viewer-close-btn">✕ 閉じる</button>
+  </div>
+  <iframe id="viewer-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+</div>
+
+<!-- ── Toast ─────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CodeDrop — all-in-one script
+// ══════════════════════════════════════════════════════════════
+
+// ── State ──────────────────────────────────────────────────────
+let projects = loadProjects();
+let files    = [makeFile('index.html', defaultHtml())];
+let activeId = files[0].id;
+let viewerProject = null;
+
+// ── Storage ────────────────────────────────────────────────────
+function loadProjects() {
+  try { return JSON.parse(localStorage.getItem('cdrop_v1') || '[]'); } catch { return []; }
+}
+function saveProjects() {
+  localStorage.setItem('cdrop_v1', JSON.stringify(projects));
+}
+
+// ── File helpers ───────────────────────────────────────────────
+function makeFile(name, content = '') {
+  return { id: crypto.randomUUID(), name, content, lang: detectLang(name) };
+}
+function detectLang(name) {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  return { html:'html', htm:'html', css:'css', js:'javascript', ts:'typescript',
+           json:'json', md:'markdown', txt:'text' }[ext] ?? 'text';
+}
+function fileIcon(lang) {
+  return { html:'H', css:'C', javascript:'J', typescript:'T', json:'{}', markdown:'M' }[lang] ?? 'F';
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Bundle files → single HTML ─────────────────────────────────
+function bundle(flist) {
+  const html = flist.find(f => f.lang === 'html');
+  if (!html) return '';
+  let doc = html.content;
+  const css = flist.filter(f => f.lang === 'css').map(f => `<style>${f.content}</style>`).join('\n');
+  const js  = flist.filter(f => f.lang === 'javascript' || f.lang === 'typescript')
+                   .map(f => `<script>${f.content}<\/script>`).join('\n');
+  if (css) doc = doc.replace(/<\/head>/i, css + '\n</head>');
+  if (js)  doc = doc.replace(/<\/body>/i, js  + '\n</body>');
+  return doc;
+}
+
+// ── Default HTML ───────────────────────────────────────────────
+function defaultHtml() {
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Site</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .card {
+      text-align: center;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 40px 60px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    h1 { font-size: 2.4rem; margin-bottom: 10px; }
+    p  { opacity: 0.85; font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hello, World! 👋</h1>
+    <p>CodeDropで作ったサイト</p>
+  </div>
+</body>
+</html>`;
+}
+
+// ── DOM refs ───────────────────────────────────────────────────
+const $ = s => document.querySelector(s);
+const ed       = $('#ed');
+const ln       = $('#ln');
+const fileList = $('#file-list');
+const edTabs   = $('#ed-tabs');
+const prevFrame= $('#prev-frame');
+const prevEmpty= $('#prev-empty');
+const prevPath = $('#prev-path');
+
+// ── Toast ──────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'info') {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Slug ───────────────────────────────────────────────────────
+function makeSlug(name) {
+  const base = (name || 'my-site').toLowerCase()
+    .replace(/[^\w\s-]/g,'').trim().replace(/[\s_]+/g,'-').replace(/-+/g,'-') || 'my-site';
+  const used = new Set(projects.map(p => p.slug));
+  let s = base, n = 1;
+  while (used.has(s)) s = `${base}-${n++}`;
+  return s;
+}
+
+// ── URL Hash Share (compress → base64url) ──────────────────────
+async function compress(str) {
+  const stream = new CompressionStream('deflate-raw');
+  const w = stream.writable.getWriter();
+  w.write(new TextEncoder().encode(str));
+  w.close();
+  const chunks = [];
+  const r = stream.readable.getReader();
+  while (true) { const {done, value} = await r.read(); if (done) break; chunks.push(value); }
+  const merged = new Uint8Array(chunks.reduce((n,c)=>n+c.length,0));
+  let off = 0; chunks.forEach(c => { merged.set(c, off); off += c.length; });
+  let bin = ''; merged.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function decompress(b64url) {
+  const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/');
+  const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+  const bin = atob(padded);
+  const bytes = new Uint8Array(bin.length);
+  for (let i=0; i<bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const stream = new DecompressionStream('deflate-raw');
+  const w = stream.writable.getWriter();
+  w.write(bytes); w.close();
+  const chunks = [];
+  const r = stream.readable.getReader();
+  while (true) { const {done, value} = await r.read(); if (done) break; chunks.push(value); }
+  const merged = new Uint8Array(chunks.reduce((n,c)=>n+c.length,0));
+  let off = 0; chunks.forEach(c => { merged.set(c, off); off += c.length; });
+  return new TextDecoder().decode(merged);
+}
+
+async function buildShareUrl(flist, siteName, siteDesc) {
+  const payload = {
+    v: 1,
+    name: siteName || 'my-site',
+    desc: siteDesc || '',
+    files: flist.map(f => ({ name: f.name, content: f.content }))
+  };
+  const encoded = await compress(JSON.stringify(payload));
+  const base = location.href.split('#')[0];
+  return `${base}#share=${encoded}`;
+}
+
+async function loadShareUrl(hash) {
+  const m = hash.replace(/^#/,'').match(/(?:^|&)share=([^&]+)/);
+  if (!m) return null;
+  try {
+    const json = await decompress(m[1]);
+    const p = JSON.parse(json);
+    if (p.v !== 1) return null;
+    return p;
+  } catch { return null; }
+}
+
+// ── Render: file list ──────────────────────────────────────────
+function renderFileList() {
+  fileList.innerHTML = '';
+  files.forEach(f => {
+    const li = document.createElement('li');
+    li.className = 'fi' + (f.id === activeId ? ' active' : '');
+    li.innerHTML = `<span class="fi-icon">${fileIcon(f.lang)}</span><span class="fi-name">${esc(f.name)}</span><button class="fi-del" title="削除">✕</button>`;
+    li.addEventListener('click', e => {
+      if (e.target.closest('.fi-del')) {
+        if (files.length === 1) { toast('最低1ファイル必要です', 'error'); return; }
+        files = files.filter(x => x.id !== f.id);
+        if (activeId === f.id) activeId = files[0].id;
+        renderAll(); return;
+      }
+      saveEdContent(); activeId = f.id; renderAll();
+    });
+    fileList.appendChild(li);
+  });
+}
+
+// ── Render: tabs ───────────────────────────────────────────────
+function renderTabs() {
+  edTabs.innerHTML = '';
+  files.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'ed-tab' + (f.id === activeId ? ' active' : '');
+    btn.innerHTML = `${esc(f.name)}<button class="tab-x">✕</button>`;
+    btn.addEventListener('click', e => {
+      if (e.target.closest('.tab-x')) {
+        if (files.length === 1) { toast('最低1ファイル必要です', 'error'); return; }
+        files = files.filter(x => x.id !== f.id);
+        if (activeId === f.id) activeId = files[0].id;
+        renderAll(); return;
+      }
+      saveEdContent(); activeId = f.id; renderAll();
+    });
+    edTabs.appendChild(btn);
+  });
+}
+
+// ── Render: editor ─────────────────────────────────────────────
+function renderEditor() {
+  const f = files.find(x => x.id === activeId);
+  if (f) { ed.value = f.content; updateLn(f.content); }
+}
+function updateLn(content) {
+  const n = content.split('\n').length;
+  ln.textContent = Array.from({length:n}, (_,i)=>i+1).join('\n');
+}
+function saveEdContent() {
+  const f = files.find(x => x.id === activeId);
+  if (f) f.content = ed.value;
+}
+
+// ── Render: preview ────────────────────────────────────────────
+function renderPreview() {
+  const html = files.find(f => f.lang === 'html');
+  if (!html) {
+    prevFrame.classList.remove('vis');
+    prevEmpty.classList.remove('hidden');
+    return;
+  }
+  const bundled = bundle(files);
+  prevFrame.classList.add('vis');
+  prevEmpty.classList.add('hidden');
+  prevPath.textContent = html.name;
+  const blob = new Blob([bundled], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  prevFrame.src = url;
+  setTimeout(() => URL.revokeObjectURL(url), 6000);
+}
+
+// ── Render all ─────────────────────────────────────────────────
+function renderAll() { renderFileList(); renderTabs(); renderEditor(); renderPreview(); }
+
+// ── Preview debounce ───────────────────────────────────────────
+let prevTimer;
+function schedulePreview() { clearTimeout(prevTimer); prevTimer = setTimeout(renderPreview, 550); }
+
+// ── Editor input ───────────────────────────────────────────────
+ed.addEventListener('input', () => {
+  const f = files.find(x => x.id === activeId);
+  if (f) { f.content = ed.value; updateLn(ed.value); }
+  schedulePreview();
+});
+ed.addEventListener('scroll', () => { ln.scrollTop = ed.scrollTop; });
+ed.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = ed.selectionStart, en = ed.selectionEnd;
+    ed.value = ed.value.slice(0,s) + '  ' + ed.value.slice(en);
+    ed.selectionStart = ed.selectionEnd = s + 2;
+    const f = files.find(x => x.id === activeId);
+    if (f) { f.content = ed.value; updateLn(ed.value); }
+    schedulePreview();
+  }
+});
+
+// ── Add file ───────────────────────────────────────────────────
+$('#add-file-btn').addEventListener('click', () => {
+  const name = prompt('ファイル名 (例: style.css, script.js)');
+  if (!name?.trim()) return;
+  const t = name.trim();
+  if (files.find(f => f.name === t)) { toast('同名ファイルが既にあります', 'error'); return; }
+  const f = makeFile(t);
+  files.push(f); activeId = f.id; renderAll();
+});
+
+// ── View switch ────────────────────────────────────────────────
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  $(`#view-${view}`).classList.add('active');
+  document.querySelector(`.nav-btn[data-view="${view}"]`).classList.add('active');
+  if (view === 'sites') renderSites();
+}
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+// ── Publish ────────────────────────────────────────────────────
+$('#publish-btn').addEventListener('click', () => {
+  saveEdContent();
+  const name = $('#site-name').value.trim() || 'my-site';
+  const desc = $('#site-desc').value.trim();
+  const slug = makeSlug(name);
+  $('#pub-summary').innerHTML = files.map(f =>
+    `<div>📄 ${esc(f.name)} <span style="color:var(--text3)">(${f.content.length} chars)</span></div>`
+  ).join('');
+  $('#pub-slug').textContent = slug;
+  $('#pub-modal').classList.add('open');
+
+  $('#pub-confirm').onclick = () => {
+    const bundled = bundle(files);
+    projects.push({
+      id: crypto.randomUUID(), name, slug, description: desc,
+      files: files.map(f => ({...f})),
+      publishedAt: new Date().toISOString(),
+      htmlContent: bundled
+    });
+    saveProjects();
+    $('#pub-modal').classList.remove('open');
+    toast(`✓ 「${name}」を公開しました！`, 'success');
+    switchView('sites');
+  };
+});
+$('#pub-modal-x').addEventListener('click', () => $('#pub-modal').classList.remove('open'));
+$('#pub-cancel').addEventListener('click',  () => $('#pub-modal').classList.remove('open'));
+$('#pub-modal').addEventListener('click', e => { if (e.target === e.currentTarget) $('#pub-modal').classList.remove('open'); });
+
+// ── Share URL (フロントエンド完結) ─────────────────────────────
+$('#share-url-btn').addEventListener('click', async () => {
+  saveEdContent();
+  const name = $('#site-name').value.trim();
+  const desc = $('#site-desc').value.trim();
+  $('#share-url-box').textContent = '生成中...';
+  $('#share-modal').classList.add('open');
+  try {
+    const url = await buildShareUrl(files, name, desc);
+    $('#share-url-box').textContent = url;
+    $('#copy-share-btn').onclick = async () => {
+      await navigator.clipboard.writeText(url);
+      toast('URLをコピーしました！', 'success');
+    };
+  } catch(e) {
+    $('#share-url-box').textContent = 'エラー: ' + e.message;
+  }
+});
+$('#share-modal-x').addEventListener('click',    () => $('#share-modal').classList.remove('open'));
+$('#share-modal-close').addEventListener('click', () => $('#share-modal').classList.remove('open'));
+$('#share-modal').addEventListener('click', e => { if (e.target === e.currentTarget) $('#share-modal').classList.remove('open'); });
+
+// ── Sites render ───────────────────────────────────────────────
+function renderSites() {
+  const grid  = $('#sites-grid');
+  const empty = $('#sites-empty');
+  grid.innerHTML = '';
+  if (projects.length === 0) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  [...projects].reverse().forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'site-card';
+    const date = new Date(p.publishedAt).toLocaleDateString('ja-JP');
+    const exts = [...new Set(p.files.map(f => f.name.split('.').pop()))];
+    card.innerHTML = `
+      <div class="site-thumb"><div class="site-thumb-ph">&lt;${esc(p.name)}&gt;</div></div>
+      <div class="site-info">
+        <div class="site-name">${esc(p.name)}</div>
+        <div class="site-row"><span class="site-slug">/${p.slug}</span><span class="site-date">${date}</span></div>
+        ${p.description ? `<div class="site-desc">${esc(p.description)}</div>` : ''}
+        <div class="site-tags">${exts.map(e=>`<span class="tag">.${e}</span>`).join('')}</div>
+      </div>`;
+    const thumb = card.querySelector('.site-thumb');
+    card.addEventListener('mouseenter', () => {
+      if (thumb.querySelector('iframe')) return;
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('sandbox','allow-scripts');
+      const blob = new Blob([p.htmlContent], {type:'text/html'});
+      iframe.src = URL.createObjectURL(blob);
+      thumb.querySelector('.site-thumb-ph')?.remove();
+      thumb.appendChild(iframe);
+    });
+    card.addEventListener('click', () => openViewer(p));
+    grid.appendChild(card);
+  });
+}
+
+// ── Viewer ─────────────────────────────────────────────────────
+function openViewer(p) {
+  viewerProject = p;
+  $('#viewer-slug').textContent = p.slug;
+  const blob = new Blob([p.htmlContent], {type:'text/html'});
+  $('#viewer-frame').src = URL.createObjectURL(blob);
+  $('#viewer').classList.add('open');
+}
+$('#viewer-close-btn').addEventListener('click', () => { $('#viewer').classList.remove('open'); viewerProject = null; });
+$('#viewer-del-btn').addEventListener('click', () => {
+  if (!viewerProject) return;
+  if (!confirm(`「${viewerProject.name}」を削除しますか？`)) return;
+  projects = projects.filter(x => x.id !== viewerProject.id);
+  saveProjects();
+  $('#viewer').classList.remove('open');
+  viewerProject = null;
+  renderSites();
+  toast('削除しました', 'info');
+});
+$('#viewer-edit-btn').addEventListener('click', () => {
+  if (!viewerProject) return;
+  files = viewerProject.files.map(f => ({...f}));
+  activeId = files[0].id;
+  $('#site-name').value = viewerProject.name;
+  $('#site-desc').value = viewerProject.description || '';
+  $('#viewer').classList.remove('open');
+  viewerProject = null;
+  switchView('editor');
+  renderAll();
+});
+$('#viewer-share-btn').addEventListener('click', async () => {
+  if (!viewerProject) return;
+  $('#share-url-box').textContent = '生成中...';
+  $('#share-modal').classList.add('open');
+  try {
+    const url = await buildShareUrl(viewerProject.files, viewerProject.name, viewerProject.description);
+    $('#share-url-box').textContent = url;
+    $('#copy-share-btn').onclick = async () => {
+      await navigator.clipboard.writeText(url);
+      toast('URLをコピーしました！', 'success');
+    };
+  } catch(e) {
+    $('#share-url-box').textContent = 'エラー: ' + e.message;
+  }
+});
+
+// ── Sites buttons ──────────────────────────────────────────────
+$('#new-proj-btn').addEventListener('click', () => {
+  files = [makeFile('index.html', defaultHtml())];
+  activeId = files[0].id;
+  $('#site-name').value = '';
+  $('#site-desc').value = '';
+  switchView('editor');
+  renderAll();
+});
+$('#goto-editor-btn').addEventListener('click', () => switchView('editor'));
+$('#prev-refresh').addEventListener('click', () => { saveEdContent(); renderPreview(); });
+
+// ── Boot: check URL hash for shared project ────────────────────
+async function boot() {
+  if (location.hash.includes('share=')) {
+    try {
+      const p = await loadShareUrl(location.hash);
+      if (p) {
+        files   = p.files.map(f => makeFile(f.name, f.content));
+        activeId = files[0].id;
+        $('#site-name').value = p.name || '';
+        $('#site-desc').value = p.desc  || '';
+        history.replaceState(null, '', location.pathname); // URLをきれいに
+        toast(`「${p.name || 'プロジェクト'}」を読み込みました`, 'success');
+      }
+    } catch(e) {
+      toast('共有URLの読み込みに失敗しました', 'error');
+    }
+  }
+  renderAll();
+}
+
+boot();
+</script>
 </body>
 </html>
